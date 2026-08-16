@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Robot Navigation Simulation</title>
+    <title>ロボットの道案内を試す | Suzuki Yuma</title>
     <style>
       :root {
         --bg: #04070f;
@@ -27,6 +27,8 @@
         font-family: "Space Grotesk", "Segoe UI", sans-serif;
         color: var(--text);
         background:
+          repeating-linear-gradient(0deg, rgba(118, 157, 222, 0.045) 0 1px, transparent 1px 32px),
+          repeating-linear-gradient(90deg, rgba(118, 157, 222, 0.045) 0 1px, transparent 1px 32px),
           radial-gradient(circle at 12% 18%, rgba(29, 62, 124, 0.35), transparent 42%),
           radial-gradient(circle at 80% 82%, rgba(88, 25, 120, 0.3), transparent 46%),
           var(--bg);
@@ -37,6 +39,7 @@
         inset: 0;
         width: 100vw;
         height: 100vh;
+        touch-action: none;
       }
 
       .panel {
@@ -50,6 +53,7 @@
         border: 1px solid var(--line);
         background: var(--panel);
         backdrop-filter: blur(10px);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
       }
 
       .panel-head {
@@ -161,6 +165,17 @@
         color: #91a4cc;
       }
 
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .panel {
+          backdrop-filter: none;
+        }
+      }
+
       @media (max-width: 760px) {
         .panel {
           width: calc(100vw - 18px);
@@ -172,45 +187,43 @@
     </style>
   </head>
   <body>
-    <canvas id="nav-canvas"></canvas>
+    <canvas id="nav-canvas" aria-label="障害物とゴールを配置してロボットの経路を試すシミュレーション"></canvas>
 
     <section class="panel" id="nav-panel">
       <div class="panel-head">
-        <a href="index.html#hobbies" class="back-link">← Portfolioへ戻る</a>
-        <button class="panel-toggle" id="nav-panel-toggle" type="button" aria-expanded="true">Hide</button>
+        <a href="index.html" class="back-link">← Portfolioへ戻る</a>
+        <button class="panel-toggle" id="nav-panel-toggle" type="button" aria-expanded="true">閉じる</button>
       </div>
       <div class="panel-body">
-        <h1>ロボットナビゲーションシミュレーション</h1>
-        <p>
-          Global Path Planner (A*) と Local Path Planner (回避制御) を重ね描きします。
-          モードを切り替えて障害物・参照経路・ゴール(最大3)を編集できます。
-        </p>
+        <h1>ロボットの道案内を試す</h1>
+        <p>障害物やゴールを置いてみてください。ロボットは全体の道筋を考えながら、動く障害物や仲間をその場でよけて進みます。</p>
 
         <div class="toolbar">
           <div class="row" id="mode-row">
             <button class="mode-btn active" data-mode="obstacle">障害物</button>
-            <button class="mode-btn" data-mode="reference">参照経路</button>
+            <button class="mode-btn" data-mode="reference">通ってほしい道</button>
             <button class="mode-btn" data-mode="goal">ゴール</button>
+            <button class="mode-btn" data-mode="erase">消しゴム</button>
           </div>
 
           <div class="range-wrap">
-            <label for="robot-count">Robots</label>
+            <label for="robot-count">ロボット</label>
             <input id="robot-count" type="range" min="2" max="18" value="7" />
             <output id="robot-count-out">7</output>
           </div>
 
           <div class="row">
             <button class="mini-btn" id="clear-obstacles">障害物をクリア</button>
-            <button class="mini-btn" id="clear-reference">参照経路をクリア</button>
-            <button class="mini-btn" id="clear-goals">ゴールをクリア</button>
-            <button class="mini-btn" id="random-goal">ゴールをランダム</button>
+            <button class="mini-btn" id="clear-reference">道を消す</button>
+            <button class="mini-btn" id="clear-goals">ゴールを1つに戻す</button>
+            <button class="mini-btn" id="random-goal">ゴールを移動</button>
           </div>
         </div>
 
         <div class="status" id="status-line"></div>
         <div class="legend">
-          左クリックで配置 / 右クリックで障害物削除(ゴールモード時はゴール削除)。動的障害物は自動で移動します。
-          ゴール到達時、ロボットは画面枠線のランダム位置に再配置されます。
+          選んだ道具で画面をクリック／ドラッグします。右クリックでも近くの障害物やゴールを消せます。
+          ゴールしたロボットは、画面の端からもう一度スタートします。
         </div>
       </div>
     </section>
@@ -238,6 +251,13 @@
         let lastPaint = null;
         let lastTs = performance.now();
         let replanClock = 0;
+        let rafId = 0;
+        let statusClock = 0;
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const lowPower =
+          navigator.connection?.saveData ||
+          (Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency <= 4);
+        const targetFrameMs = 1000 / (reducedMotion || lowPower ? 30 : 45);
 
         const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
         const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
@@ -254,7 +274,7 @@
         };
 
         const maxGoals = 3;
-        const dynamicObstacleCount = 8;
+        const dynamicObstacleCount = reducedMotion || lowPower ? 5 : 8;
 
         const randomBorderPosition = () => {
           const m = 14;
@@ -418,7 +438,10 @@
               let hit = false;
               for (let i = 0; i < state.obstacles.length; i += 1) {
                 const o = state.obstacles[i];
-                if (dist(px, py, o.x, o.y) <= o.r + pad) {
+                const dx = px - o.x;
+                const dy = py - o.y;
+                const radius = o.r + pad;
+                if (dx * dx + dy * dy <= radius * radius) {
                   hit = true;
                   break;
                 }
@@ -426,7 +449,10 @@
               if (!hit) {
                 for (let i = 0; i < state.dynamicObstacles.length; i += 1) {
                   const o = state.dynamicObstacles[i];
-                  if (dist(px, py, o.x, o.y) <= o.r + pad) {
+                  const dx = px - o.x;
+                  const dy = py - o.y;
+                  const radius = o.r + pad;
+                  if (dx * dx + dy * dy <= radius * radius) {
                     hit = true;
                     break;
                   }
@@ -438,75 +464,116 @@
           return blocked;
         };
 
-        const heuristic = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-
-        const aStar = (startWorld, endWorld) => {
+        const createPlanningGrid = () => {
           const cell = state.cellSize;
-          const cols = Math.max(6, Math.floor(width / cell));
-          const rows = Math.max(4, Math.floor(height / cell));
+          const cols = Math.max(6, Math.ceil(width / cell));
+          const rows = Math.max(4, Math.ceil(height / cell));
           const blocked = buildBlockedGrid(cols, rows, cell);
+          return { cell, cols, rows, blocked };
+        };
+
+        const aStar = (startWorld, endWorld, grid, routeCache) => {
+          const { cell, cols, rows, blocked } = grid;
           let start = toCell(startWorld.x, startWorld.y, cols, rows, cell);
           let goal = toCell(endWorld.x, endWorld.y, cols, rows, cell);
           start = nearestFreeCell(start, blocked, cols, rows);
           goal = nearestFreeCell(goal, blocked, cols, rows);
           if (!start || !goal) return null;
 
-          const key = (x, y) => `${x},${y}`;
+          const startIndex = idx(start.x, start.y, cols);
+          const goalIndex = idx(goal.x, goal.y, cols);
+          const cacheKey = `${startIndex}:${goalIndex}`;
+          if (routeCache?.has(cacheKey)) return routeCache.get(cacheKey);
+
           const dirs = [
             [1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1],
             [1, 1, Math.SQRT2], [1, -1, Math.SQRT2], [-1, 1, Math.SQRT2], [-1, -1, Math.SQRT2]
           ];
 
-          const open = [start];
-          const openSet = new Set([key(start.x, start.y)]);
-          const cameFrom = new Map();
-          const gScore = new Map([[key(start.x, start.y), 0]]);
-          const fScore = new Map([[key(start.x, start.y), heuristic(start, goal)]]);
+          const size = cols * rows;
+          const cameFrom = new Int32Array(size);
+          const gScore = new Float32Array(size);
+          const closed = new Uint8Array(size);
+          cameFrom.fill(-1);
+          gScore.fill(Infinity);
+          gScore[startIndex] = 0;
 
-          while (open.length) {
-            let bestIndex = 0;
-            for (let i = 1; i < open.length; i += 1) {
-              if ((fScore.get(key(open[i].x, open[i].y)) ?? Infinity) < (fScore.get(key(open[bestIndex].x, open[bestIndex].y)) ?? Infinity)) {
-                bestIndex = i;
+          const heapNodes = [];
+          const heapScores = [];
+          const pushHeap = (node, score) => {
+            let position = heapNodes.length;
+            heapNodes.push(node);
+            heapScores.push(score);
+            while (position > 0) {
+              const parent = (position - 1) >> 1;
+              if (heapScores[parent] <= score) break;
+              heapNodes[position] = heapNodes[parent];
+              heapScores[position] = heapScores[parent];
+              position = parent;
+            }
+            heapNodes[position] = node;
+            heapScores[position] = score;
+          };
+          const popHeap = () => {
+            const first = heapNodes[0];
+            const lastNode = heapNodes.pop();
+            const lastScore = heapScores.pop();
+            if (heapNodes.length && lastNode !== undefined && lastScore !== undefined) {
+              let position = 0;
+              heapNodes[0] = lastNode;
+              heapScores[0] = lastScore;
+              while (true) {
+                const left = position * 2 + 1;
+                const right = left + 1;
+                if (left >= heapNodes.length) break;
+                let child = left;
+                if (right < heapNodes.length && heapScores[right] < heapScores[left]) child = right;
+                if (heapScores[position] <= heapScores[child]) break;
+                [heapNodes[position], heapNodes[child]] = [heapNodes[child], heapNodes[position]];
+                [heapScores[position], heapScores[child]] = [heapScores[child], heapScores[position]];
+                position = child;
               }
             }
+            return first;
+          };
+          pushHeap(startIndex, Math.hypot(start.x - goal.x, start.y - goal.y));
 
-            const current = open.splice(bestIndex, 1)[0];
-            const cKey = key(current.x, current.y);
-            openSet.delete(cKey);
+          while (heapNodes.length) {
+            const currentIndex = popHeap();
+            if (currentIndex === undefined || closed[currentIndex]) continue;
+            closed[currentIndex] = 1;
+            const currentX = currentIndex % cols;
+            const currentY = Math.floor(currentIndex / cols);
 
-            if (current.x === goal.x && current.y === goal.y) {
-              const cells = [current];
-              let walk = cKey;
-              while (cameFrom.has(walk)) {
-                const prev = cameFrom.get(walk);
-                const [px, py] = prev.split(',').map(Number);
-                cells.push({ x: px, y: py });
-                walk = prev;
+            if (currentIndex === goalIndex) {
+              const cells = [];
+              let walk = currentIndex;
+              while (walk >= 0) {
+                cells.push(walk);
+                if (walk === startIndex) break;
+                walk = cameFrom[walk];
               }
               cells.reverse();
-              return cells.map((c) => ({
-                x: c.x * cell + cell * 0.5,
-                y: c.y * cell + cell * 0.5
+              const route = cells.map((cellIndex) => ({
+                x: (cellIndex % cols) * cell + cell * 0.5,
+                y: Math.floor(cellIndex / cols) * cell + cell * 0.5
               }));
+              routeCache?.set(cacheKey, route);
+              return route;
             }
 
-            const currentG = gScore.get(cKey) ?? Infinity;
+            const currentG = gScore[currentIndex];
             for (let d = 0; d < dirs.length; d += 1) {
-              const nx = current.x + dirs[d][0];
-              const ny = current.y + dirs[d][1];
+              const nx = currentX + dirs[d][0];
+              const ny = currentY + dirs[d][1];
               if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
-              if (blocked[idx(nx, ny, cols)]) continue;
-              const nKey = key(nx, ny);
+              const neighborIndex = idx(nx, ny, cols);
+              if (blocked[neighborIndex] || closed[neighborIndex]) continue;
               const tentative = currentG + dirs[d][2];
-              if (tentative >= (gScore.get(nKey) ?? Infinity)) continue;
-              cameFrom.set(nKey, cKey);
-              gScore.set(nKey, tentative);
-              fScore.set(nKey, tentative + heuristic({ x: nx, y: ny }, goal));
-              if (!openSet.has(nKey)) {
-                open.push({ x: nx, y: ny });
-                openSet.add(nKey);
-              }
+              if (tentative >= gScore[neighborIndex]) continue;
+              cameFrom[neighborIndex] = currentIndex;
+              gScore[neighborIndex] = tentative;
+              pushHeap(neighborIndex, tentative + Math.hypot(nx - goal.x, ny - goal.y));
             }
           }
           return null;
@@ -522,22 +589,21 @@
           return out;
         };
 
-        const planRoute = (sx, sy, gx, gy) => {
+        const planRoute = (sx, sy, gx, gy, grid, routeCache) => {
           const refs = sampledReference();
           const goals = [...refs, { x: gx, y: gy }];
           let from = { x: sx, y: sy };
-          let merged = [];
+          const merged = [];
           for (let i = 0; i < goals.length; i += 1) {
-            const seg = aStar(from, goals[i]);
-            if (!seg || seg.length === 0) return aStar({ x: sx, y: sy }, { x: gx, y: gy }) || [];
-            if (merged.length > 0) seg.shift();
-            merged = merged.concat(seg);
+            const seg = aStar(from, goals[i], grid, routeCache);
+            if (!seg || seg.length === 0) return aStar({ x: sx, y: sy }, { x: gx, y: gy }, grid, routeCache) || [];
+            merged.push(...(merged.length ? seg.slice(1) : seg));
             from = goals[i];
           }
           return merged;
         };
 
-        const planRobot = (robot) => {
+        const planRobot = (robot, grid = createPlanningGrid(), routeCache = new Map()) => {
           const nearest = nearestGoalInfo(robot.x, robot.y);
           if (!nearest) {
             robot.goalIndex = -1;
@@ -546,17 +612,21 @@
             return;
           }
           robot.goalIndex = nearest.index;
-          robot.globalPath = planRoute(robot.x, robot.y, nearest.goal.x, nearest.goal.y);
+          robot.globalPath = planRoute(robot.x, robot.y, nearest.goal.x, nearest.goal.y, grid, routeCache);
           robot.pathIndex = 0;
         };
 
         const planAllRobots = () => {
-          for (let i = 0; i < state.robots.length; i += 1) planRobot(state.robots[i]);
+          if (!width || !height || !state.goals.length) return;
+          const grid = createPlanningGrid();
+          const routeCache = new Map();
+          for (let i = 0; i < state.robots.length; i += 1) planRobot(state.robots[i], grid, routeCache);
         };
 
         const addObstacle = (x, y) => {
           const radius = random(20, 44);
           state.obstacles.push({ x, y, r: radius });
+          if (state.obstacles.length > 84) state.obstacles.shift();
         };
 
         const removeNearestObstacle = (x, y) => {
@@ -573,7 +643,19 @@
           if (best >= 0 && bestD < 22) {
             state.obstacles.splice(best, 1);
             planAllRobots();
+            return true;
           }
+          return false;
+        };
+
+        const eraseAt = (x, y) => {
+          const nearGoal = nearestGoalInfo(x, y);
+          if (nearGoal && nearGoal.distance <= nearGoal.goal.r + 18) {
+            removeNearestGoal(x, y);
+            planAllRobots();
+            return;
+          }
+          removeNearestObstacle(x, y);
         };
 
         const localPlannerStep = (robot, dtNorm) => {
@@ -673,6 +755,7 @@
         };
 
         const drawGoals = () => {
+          const pulse = (Math.sin(performance.now() * 0.004) + 1) * 0.5;
           for (let i = 0; i < state.goals.length; i += 1) {
             const g = state.goals[i];
             ctx.save();
@@ -683,7 +766,7 @@
             ctx.stroke();
             ctx.strokeStyle = 'rgba(132, 248, 226, 0.35)';
             ctx.beginPath();
-            ctx.arc(g.x, g.y, g.r + 10, 0, Math.PI * 2);
+            ctx.arc(g.x, g.y, g.r + 8 + pulse * 5, 0, Math.PI * 2);
             ctx.stroke();
             ctx.fillStyle = 'rgba(132, 248, 226, 0.9)';
             ctx.font = '12px "Space Grotesk", sans-serif';
@@ -695,6 +778,14 @@
         };
 
         const drawObstacle = (o, dynamic = false) => {
+          if (dynamic) {
+            ctx.strokeStyle = 'rgba(140, 224, 255, 0.18)';
+            ctx.lineWidth = Math.max(2, o.r * 0.26);
+            ctx.beginPath();
+            ctx.moveTo(o.x, o.y);
+            ctx.lineTo(o.x - o.vx * 16, o.y - o.vy * 16);
+            ctx.stroke();
+          }
           const g = ctx.createRadialGradient(o.x, o.y, o.r * 0.2, o.x, o.y, o.r * 1.2);
           if (dynamic) {
             g.addColorStop(0, 'rgba(130, 205, 255, 0.24)');
@@ -779,18 +870,32 @@
         };
 
         const animate = (ts) => {
-          const dt = clamp((ts - lastTs) / 16.666, 0.4, 1.8);
+          if (document.hidden) {
+            rafId = 0;
+            return;
+          }
+          const elapsed = ts - lastTs;
+          if (elapsed < targetFrameMs) {
+            rafId = requestAnimationFrame(animate);
+            return;
+          }
+          const dt = clamp(elapsed / 16.666, 0.4, 2.2);
           lastTs = ts;
           updateDynamicObstacles(dt);
-          replanClock += dt;
-          if (replanClock >= 70) {
+          replanClock += elapsed;
+          if (replanClock >= 1400) {
             replanClock = 0;
             planAllRobots();
           }
           for (let i = 0; i < state.robots.length; i += 1) localPlannerStep(state.robots[i], dt);
           drawScene();
-          statusLine.textContent = `Mode: ${mode} | Robots: ${state.robots.length} | Obstacles: ${state.obstacles.length} + Dynamic ${state.dynamicObstacles.length} | Goals: ${state.goals.length}/3 | Ref points: ${state.reference.length}`;
-          requestAnimationFrame(animate);
+          statusClock += elapsed;
+          if (statusClock >= 240) {
+            const modeLabels = { obstacle: '障害物', reference: '通ってほしい道', goal: 'ゴール', erase: '消しゴム' };
+            statusLine.textContent = `${modeLabels[mode]} ｜ ロボット ${state.robots.length} ｜ 障害物 ${state.obstacles.length}＋移動 ${state.dynamicObstacles.length} ｜ ゴール ${state.goals.length}/3`;
+            statusClock = 0;
+          }
+          rafId = requestAnimationFrame(animate);
         };
 
         const pointerPos = (e) => {
@@ -800,13 +905,13 @@
 
         canvas.addEventListener('pointerdown', (e) => {
           const p = pointerPos(e);
-          if (e.button === 2) {
-            if (mode === 'goal') {
-              removeNearestGoal(p.x, p.y);
-              planAllRobots();
-              return;
+          if (e.button === 2 || mode === 'erase') {
+            eraseAt(p.x, p.y);
+            if (mode === 'erase' && e.button !== 2) {
+              isDrawing = true;
+              lastPaint = p;
+              canvas.setPointerCapture?.(e.pointerId);
             }
-            removeNearestObstacle(p.x, p.y);
             return;
           }
           if (mode === 'goal') {
@@ -816,6 +921,7 @@
           }
           isDrawing = true;
           lastPaint = p;
+          canvas.setPointerCapture?.(e.pointerId);
           if (mode === 'obstacle') addObstacle(p.x, p.y);
           if (mode === 'reference') state.reference.push(p);
         });
@@ -831,8 +937,12 @@
           } else if (mode === 'reference') {
             if (!lastPaint || dist(lastPaint.x, lastPaint.y, p.x, p.y) > 10) {
               state.reference.push(p);
+              if (state.reference.length > 180) state.reference.shift();
               lastPaint = p;
             }
+          } else if (mode === 'erase' && (!lastPaint || dist(lastPaint.x, lastPaint.y, p.x, p.y) > 18)) {
+            eraseAt(p.x, p.y);
+            lastPaint = p;
           }
         });
 
@@ -844,6 +954,7 @@
         };
 
         canvas.addEventListener('pointerup', endDraw);
+        canvas.addEventListener('pointercancel', endDraw);
         canvas.addEventListener('pointerleave', endDraw);
         canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -852,6 +963,17 @@
           if (!btn) return;
           mode = btn.dataset.mode;
           [...modeRow.querySelectorAll('button[data-mode]')].forEach((b) => b.classList.toggle('active', b === btn));
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.target instanceof HTMLInputElement) return;
+          const modes = ['obstacle', 'reference', 'goal', 'erase'];
+          const selectedMode = modes[Number(event.key) - 1];
+          if (!selectedMode) return;
+          mode = selectedMode;
+          modeRow.querySelectorAll('button[data-mode]').forEach((button) => {
+            button.classList.toggle('active', button.dataset.mode === mode);
+          });
         });
 
         robotSlider.addEventListener('input', () => {
@@ -888,13 +1010,13 @@
         if (navPanel && navPanelToggle) {
           navPanelToggle.addEventListener('click', () => {
             const collapsed = navPanel.classList.toggle('collapsed');
-            navPanelToggle.textContent = collapsed ? 'Show' : 'Hide';
+            navPanelToggle.textContent = collapsed ? '設定を開く' : '閉じる';
             navPanelToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
           });
         }
 
         const resize = () => {
-          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.2 : 1.5);
           width = window.innerWidth;
           height = window.innerHeight;
           canvas.width = Math.floor(width * dpr);
@@ -925,8 +1047,24 @@
         ensureDynamicObstacles();
         ensureRobotCount();
         resize();
-        window.addEventListener('resize', resize);
-        requestAnimationFrame(animate);
+        let resizeRaf = 0;
+        window.addEventListener('resize', () => {
+          if (resizeRaf) cancelAnimationFrame(resizeRaf);
+          resizeRaf = requestAnimationFrame(() => {
+            resizeRaf = 0;
+            resize();
+          });
+        }, { passive: true });
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = 0;
+            return;
+          }
+          lastTs = performance.now();
+          if (!rafId) rafId = requestAnimationFrame(animate);
+        });
+        rafId = requestAnimationFrame(animate);
       })();
     </script>
   </body>

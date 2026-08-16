@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Typing Fall Motion</title>
+    <title>文字を落として遊ぶ | Suzuki Yuma</title>
     <style>
       :root {
         --bg: #0a0b12;
@@ -37,6 +37,7 @@
         inset: 0;
         width: 100vw;
         height: 100vh;
+        touch-action: manipulation;
       }
 
       .panel {
@@ -50,6 +51,7 @@
         border: 1px solid var(--line);
         background: var(--panel);
         backdrop-filter: blur(10px);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.24);
       }
 
       .panel-head {
@@ -199,6 +201,22 @@
         color: var(--muted);
       }
 
+      .live-status {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 9px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.74rem;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
       @media (max-width: 720px) {
         .entry-form {
           grid-template-columns: 1fr;
@@ -225,53 +243,60 @@
           --accent: #1e7d74;
         }
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        .panel,
+        .quick-input {
+          backdrop-filter: none;
+        }
+      }
     </style>
   </head>
   <body>
-    <canvas id="type-canvas"></canvas>
+    <canvas id="type-canvas" aria-label="入力した文字が落下するインタラクティブ作品"></canvas>
 
     <section class="panel" id="type-panel">
       <div class="panel-head">
-        <a class="back-link" href="index.html#hobbies">Back to Portfolio</a>
-        <button class="panel-toggle" id="type-panel-toggle" type="button" aria-expanded="true">Hide</button>
+        <a class="back-link" href="index.html">← ポートフォリオへ戻る</a>
+        <button class="panel-toggle" id="type-panel-toggle" type="button" aria-expanded="true">閉じる</button>
       </div>
       <div class="panel-body">
-        <h1>Typing Fall Motion</h1>
-        <p>Press Space to drop input instantly. Tune style, size, gravity, and glow.</p>
+        <h1>文字を落として遊ぶ</h1>
+        <p>好きな言葉を入力して「落とす」を押してください。文字の見た目や落ち方も変えられます。</p>
 
         <form id="type-form" class="entry-form">
-          <input id="type-input" type="text" placeholder="Type text and hit Space" autocomplete="off" />
-          <button type="submit">Drop</button>
-          <button id="clear-btn" type="button">Clear</button>
+          <input id="type-input" type="text" maxlength="60" placeholder="ここに文字を入力" autocomplete="off" aria-label="落とす文字" />
+          <button type="submit">落とす</button>
+          <button id="clear-btn" type="button">消す</button>
         </form>
 
         <div class="style-grid">
           <div class="style-cell">
-            <label for="style-profile">Style</label>
+            <label for="style-profile">見た目</label>
             <select id="style-profile">
-              <option value="neon">Neon</option>
-              <option value="ink">Ink</option>
-              <option value="shodo">Shodo (書道風)</option>
-              <option value="mono">Monochrome</option>
-              <option value="glitch">Glitch</option>
+              <option value="neon">ネオン</option>
+              <option value="ink">インク</option>
+              <option value="shodo">書道</option>
+              <option value="mono">モノクロ</option>
+              <option value="glitch">グリッチ</option>
             </select>
           </div>
           <div class="style-cell">
-            <label for="size-scale">Size</label>
+            <label for="size-scale">大きさ</label>
             <div class="range-wrap">
               <input id="size-scale" type="range" min="0.6" max="1.8" step="0.05" value="1.00" />
               <output id="size-scale-val">1.00</output>
             </div>
           </div>
           <div class="style-cell">
-            <label for="gravity-control">Gravity</label>
+            <label for="gravity-control">重さ</label>
             <div class="range-wrap">
               <input id="gravity-control" type="range" min="0.04" max="0.20" step="0.01" value="0.09" />
               <output id="gravity-control-val">0.09</output>
             </div>
           </div>
           <div class="style-cell">
-            <label for="glow-control">Glow</label>
+            <label for="glow-control">光</label>
             <div class="range-wrap">
               <input id="glow-control" type="range" min="0" max="30" step="1" value="12" />
               <output id="glow-control-val">12</output>
@@ -279,12 +304,16 @@
           </div>
         </div>
 
-        <div class="tips">Tip: click empty space to spawn random letters.</div>
+        <div class="tips">画面の空いている場所をクリックすると、文字がひとつ飛び出します。</div>
+        <div class="live-status" aria-live="polite">
+          <span>Enterキーでも落とせます</span>
+          <span id="glyph-count">0 / 180</span>
+        </div>
       </div>
     </section>
     <div class="quick-input" id="quick-input-wrap" hidden>
-      <input id="quick-type-input" type="text" placeholder="Type text and hit Space" autocomplete="off" />
-      <button id="quick-drop-btn" type="button">Drop</button>
+      <input id="quick-type-input" type="text" maxlength="60" placeholder="文字を入力して Enter" autocomplete="off" aria-label="落とす文字" />
+      <button id="quick-drop-btn" type="button">落とす</button>
     </div>
 
     <script>
@@ -293,12 +322,17 @@
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        let dpr = 1;
         let width = window.innerWidth;
         let height = window.innerHeight;
         let frame = 0;
+        let rafId = 0;
+        let lastFrameTs = 0;
+        let quietFrames = 0;
 
         const glyphs = [];
+        const maxGlyphs = 180;
+        const glyphCount = document.getElementById('glyph-count');
         const themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
         let isDarkMode = themeQuery.matches;
 
@@ -318,10 +352,15 @@
         };
 
         const random = (min, max) => min + Math.random() * (max - min);
+        const updateGlyphCount = () => {
+          if (glyphCount) glyphCount.textContent = `${glyphs.length} / ${maxGlyphs}`;
+        };
 
         const resize = () => {
           width = window.innerWidth;
           height = window.innerHeight;
+          const dprCap = width < 720 || navigator.connection?.saveData ? 1.25 : 1.6;
+          dpr = Math.min(window.devicePixelRatio || 1, dprCap);
           canvas.width = Math.floor(width * dpr);
           canvas.height = Math.floor(height * dpr);
           canvas.style.width = `${width}px`;
@@ -338,8 +377,10 @@
         };
 
         const spawnText = (text) => {
-          const chars = Array.from(text);
+          const chars = Array.from(text).slice(0, 60);
           if (!chars.length) return;
+          const overflow = Math.max(0, glyphs.length + chars.length - maxGlyphs);
+          if (overflow) glyphs.splice(0, overflow);
           const palette = palettes[styleState.profile];
           const gap = Math.min(24, (width * 0.8) / Math.max(chars.length, 1));
           const startX = width * 0.5 - ((chars.length - 1) * gap) / 2;
@@ -367,6 +408,8 @@
               bleed: random(0.6, 1.6)
             });
           });
+          updateGlyphCount();
+          startLoop();
         };
 
         const dropInputText = (input) => {
@@ -383,55 +426,76 @@
           ctx.fillRect(0, 0, width, height);
         };
 
-        const updateGlyphs = () => {
+        const updateGlyphs = (dt) => {
+          let removed = false;
           for (let i = glyphs.length - 1; i >= 0; i -= 1) {
             const g = glyphs[i];
-            g.vy += styleState.gravity;
-            g.x += g.vx + Math.sin(frame * g.wobble + i) * 0.42;
-            g.y += g.vy;
-            g.rot += g.vr;
+            g.vy += styleState.gravity * dt;
+            g.x += (g.vx + Math.sin(frame * g.wobble + i) * 0.42) * dt;
+            g.y += g.vy * dt;
+            g.rot += g.vr * dt;
 
             if (g.y > height - 22) {
               g.y = height - 22;
               g.vy *= -0.35;
               g.vx *= 0.9;
               g.vr *= 0.93;
-              g.alpha -= 0.012;
+              g.alpha -= 0.012 * dt;
             }
 
             if (g.alpha <= 0 || g.y > height + 150 || g.x < -120 || g.x > width + 120) {
               glyphs.splice(i, 1);
+              removed = true;
             }
           }
+          if (removed) updateGlyphCount();
         };
 
         const resolveCollisions = () => {
-          const count = glyphs.length;
-          for (let i = 0; i < count; i += 1) {
+          const cellSize = 76;
+          const buckets = new Map();
+          for (let i = 0; i < glyphs.length; i += 1) {
+            const g = glyphs[i];
+            const key = `${Math.floor(g.x / cellSize)},${Math.floor(g.y / cellSize)}`;
+            const bucket = buckets.get(key);
+            if (bucket) bucket.push(i);
+            else buckets.set(key, [i]);
+          }
+
+          for (let i = 0; i < glyphs.length; i += 1) {
             const a = glyphs[i];
-            for (let j = i + 1; j < count; j += 1) {
-              const b = glyphs[j];
-              const dx = b.x - a.x;
-              const dy = b.y - a.y;
-              const dist2 = dx * dx + dy * dy;
-              const minDist = a.radius + b.radius;
-              if (dist2 <= 0.0001 || dist2 >= minDist * minDist) continue;
+            const cellX = Math.floor(a.x / cellSize);
+            const cellY = Math.floor(a.y / cellSize);
+            for (let oy = -1; oy <= 1; oy += 1) {
+              for (let ox = -1; ox <= 1; ox += 1) {
+                const bucket = buckets.get(`${cellX + ox},${cellY + oy}`);
+                if (!bucket) continue;
+                for (let k = 0; k < bucket.length; k += 1) {
+                  const j = bucket[k];
+                  if (j <= i) continue;
+                  const b = glyphs[j];
+                  const dx = b.x - a.x;
+                  const dy = b.y - a.y;
+                  const dist2 = dx * dx + dy * dy;
+                  const minDist = a.radius + b.radius;
+                  if (dist2 <= 0.0001 || dist2 >= minDist * minDist) continue;
 
-              const dist = Math.sqrt(dist2);
-              const nx = dx / dist;
-              const ny = dy / dist;
-              const overlap = (minDist - dist) * 0.52;
+                  const distance = Math.sqrt(dist2);
+                  const nx = dx / distance;
+                  const ny = dy / distance;
+                  const overlap = (minDist - distance) * 0.52;
+                  a.x -= nx * overlap;
+                  a.y -= ny * overlap;
+                  b.x += nx * overlap;
+                  b.y += ny * overlap;
 
-              a.x -= nx * overlap;
-              a.y -= ny * overlap;
-              b.x += nx * overlap;
-              b.y += ny * overlap;
-
-              const push = 0.055;
-              a.vx -= nx * push;
-              a.vy -= ny * push;
-              b.vx += nx * push;
-              b.vy += ny * push;
+                  const push = 0.055;
+                  a.vx -= nx * push;
+                  a.vy -= ny * push;
+                  b.vx += nx * push;
+                  b.vy += ny * push;
+                }
+              }
             }
           }
         };
@@ -444,6 +508,14 @@
             const g = glyphs[i];
             const jitterX = g.profile === 'glitch' ? Math.sin(frame * 0.4 + i) * 1.2 : 0;
             const jitterY = g.profile === 'glitch' ? Math.cos(frame * 0.45 + i) * 1.2 : 0;
+            if ((g.profile === 'neon' || g.profile === 'glitch') && Math.abs(g.vy) > 1.8) {
+              ctx.strokeStyle = `hsla(${g.hue}, ${g.sat}%, ${g.light}%, ${Math.max(0, g.alpha) * 0.14})`;
+              ctx.lineWidth = Math.max(1, g.size * 0.055);
+              ctx.beginPath();
+              ctx.moveTo(g.x, g.y);
+              ctx.lineTo(g.x - g.vx * 2.4, g.y - g.vy * 2.4);
+              ctx.stroke();
+            }
             ctx.save();
             ctx.translate(g.x + jitterX, g.y + jitterY);
             ctx.rotate(g.rot);
@@ -477,13 +549,32 @@
           }
         };
 
-        const loop = () => {
-          frame += 1;
+        const loop = (timestamp) => {
+          if (document.hidden) {
+            rafId = 0;
+            lastFrameTs = 0;
+            return;
+          }
+          const dt = lastFrameTs ? Math.min(2, (timestamp - lastFrameTs) / 16.667) : 1;
+          lastFrameTs = timestamp;
+          frame += dt;
           drawBackground();
-          updateGlyphs();
+          updateGlyphs(dt);
           resolveCollisions();
           renderGlyphs();
-          requestAnimationFrame(loop);
+          quietFrames = glyphs.length ? 0 : quietFrames + 1;
+          if (quietFrames < 36) {
+            rafId = requestAnimationFrame(loop);
+          } else {
+            ctx.clearRect(0, 0, width, height);
+            rafId = 0;
+            lastFrameTs = 0;
+          }
+        };
+
+        const startLoop = () => {
+          quietFrames = 0;
+          if (!rafId && !document.hidden) rafId = requestAnimationFrame(loop);
         };
 
         const bindRange = (id, stateKey, digits) => {
@@ -524,38 +615,20 @@
             dropInputText(input);
           });
 
-          input.addEventListener('keydown', (event) => {
-            if (event.key === ' ' && input.value.trim()) {
-              event.preventDefault();
-              dropInputText(input);
-            }
-          });
         }
-
-        document.addEventListener('keydown', (event) => {
-          const activeElement = document.activeElement;
-          const focusedComposer = activeElement === input || activeElement === quickInput;
-          if (event.key === ' ' && !focusedComposer && input && input.value.trim()) {
-            event.preventDefault();
-            dropInputText(input);
-            return;
-          }
-          if (event.key === ' ' && !focusedComposer && quickInput && quickInput.value.trim()) {
-            event.preventDefault();
-            dropInputText(quickInput);
-          }
-        });
 
         if (clearBtn) {
           clearBtn.addEventListener('click', () => {
             glyphs.length = 0;
+            updateGlyphCount();
+            startLoop();
           });
         }
 
         if (panel && panelToggle) {
           panelToggle.addEventListener('click', () => {
             const collapsed = panel.classList.toggle('collapsed');
-            panelToggle.textContent = collapsed ? 'Show' : 'Hide';
+            panelToggle.textContent = collapsed ? '設定を開く' : '閉じる';
             panelToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
             if (quickInputWrap) {
               quickInputWrap.hidden = !collapsed;
@@ -573,7 +646,7 @@
             dropInputText(quickInput);
           });
           quickInput.addEventListener('keydown', (event) => {
-            if (event.key === ' ' && quickInput.value.trim()) {
+            if (event.key === 'Enter' && quickInput.value.trim()) {
               event.preventDefault();
               dropInputText(quickInput);
             }
@@ -583,10 +656,12 @@
         if (themeQuery.addEventListener) {
           themeQuery.addEventListener('change', (event) => {
             isDarkMode = event.matches;
+            startLoop();
           });
         } else if (themeQuery.addListener) {
           themeQuery.addListener((event) => {
             isDarkMode = event.matches;
+            startLoop();
           });
         }
 
@@ -605,9 +680,11 @@
         });
 
         window.addEventListener('resize', resize);
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden && glyphs.length) startLoop();
+        });
         resize();
-        drawBackground();
-        loop();
+        updateGlyphCount();
       })();
     </script>
   </body>

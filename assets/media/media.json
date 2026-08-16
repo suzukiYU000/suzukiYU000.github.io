@@ -1,14 +1,14 @@
 {
   "profilePhoto": {
-    "src": "assets/IMG_9679.jpg",
+    "src": "assets/IMG_9679-optimized.webp",
     "alt": "Profile photo"
   },
   "feelingVideo": {
-    "src": "assets/Feeling.mp4",
+    "src": "assets/Feeling-optimized.mp4",
     "caption": "Feeling Hands-Free Mobility"
   },
   "sharedControlVideo": {
-    "src": "assets/SharedControl.mp4",
+    "src": "assets/SharedControl-cropped.mp4",
     "caption": "Shared Control"
   }
 }
