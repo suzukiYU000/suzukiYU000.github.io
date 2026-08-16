@@ -406,7 +406,7 @@ const warmPageDuringIntro = (mediaConfigReady) => {
 
 const startPostIntroResources = (mediaConfigReady) => {
   const effectsScript = document.createElement('script');
-  effectsScript.src = 'effects.js?v=20260816-8';
+  effectsScript.src = 'effects.js?v=20260816-9';
   effectsScript.async = true;
   document.body.append(effectsScript);
 

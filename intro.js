@@ -329,7 +329,7 @@ if (introGate) {
         scatterForce: random(24, 38),
         driftY: random(0.08, 0.3),
         depthPush: random(0.9, 1.6),
-        ellipse: random(0.9, 1.06),
+        ellipse: 1,
         phase: random(0, Math.PI * 2)
       };
     });

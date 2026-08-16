@@ -146,8 +146,15 @@
       const scale = constrainedDevice ? 0.48 : 0.62;
       const dpr = Math.min(window.devicePixelRatio || 1, 1);
       const maxPixels = constrainedDevice ? 380000 : 820000;
-      let renderWidth = Math.max(320, Math.floor(window.innerWidth * scale * dpr));
-      let renderHeight = Math.max(200, Math.floor(window.innerHeight * scale * dpr));
+      const viewportWidth = Math.max(1, window.innerWidth);
+      const viewportHeight = Math.max(1, window.innerHeight);
+      const minRenderSide = constrainedDevice ? 220 : 240;
+      const renderScale = Math.max(
+        scale * dpr,
+        minRenderSide / Math.min(viewportWidth, viewportHeight)
+      );
+      let renderWidth = Math.max(1, Math.floor(viewportWidth * renderScale));
+      let renderHeight = Math.max(1, Math.floor(viewportHeight * renderScale));
       const pixelCount = renderWidth * renderHeight;
       if (pixelCount > maxPixels) {
         const fit = Math.sqrt(maxPixels / pixelCount);
@@ -156,8 +163,8 @@
       }
       canvas.width = renderWidth;
       canvas.height = renderHeight;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
+      canvas.style.width = `${viewportWidth}px`;
+      canvas.style.height = `${viewportHeight}px`;
     };
     resize();
 
