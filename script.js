@@ -115,7 +115,7 @@ if (siteHeader && navToggle && siteNav) {
 const contactForm = document.getElementById('contact-form');
 if (contactForm) {
   const contactMailAppButton = document.getElementById('contact-mail-app');
-  const contactTo = 'yuma.suzuki.work@gmail.com';
+  const contactTo = ['yuma.suzuki.work', 'gmail.com'].join('@');
 
   const getContactPayload = () => {
     const name = (document.getElementById('contact-name')?.value || '').trim();
