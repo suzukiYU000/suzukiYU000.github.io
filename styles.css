@@ -11,8 +11,7 @@
   --wave-opacity: 0.72;
   --bg-gradient: linear-gradient(140deg, var(--bg), var(--bg-alt));
   --bg-overlay: none;
-  --cursor-dot-color: #1fd1b8;
-  --cursor-dot-shadow: 0 0 12px rgba(31, 209, 184, 0.8);
+  --cursor-native: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%276%27 fill=%27%231fd1b8%27 opacity=%27.18%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%273.5%27 fill=%27%231fd1b8%27/%3E%3C/svg%3E') 12 12, auto;
   --cursor-ring-color: rgba(91, 192, 255, 0.8);
   --cursor-ring-hover-color: rgba(31, 209, 184, 0.95);
   --cursor-ring-hover-shadow: 0 0 18px rgba(31, 209, 184, 0.35);
@@ -57,8 +56,7 @@
         transparent 1px,
         transparent 4px
       );
-    --cursor-dot-color: #292c29;
-    --cursor-dot-shadow: 0 0 8px rgba(41, 44, 41, 0.28);
+    --cursor-native: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%276%27 fill=%27%23292c29%27 opacity=%27.14%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%273.5%27 fill=%27%23292c29%27/%3E%3C/svg%3E') 12 12, auto;
     --cursor-ring-color: rgba(54, 59, 56, 0.5);
     --cursor-ring-hover-color: rgba(37, 42, 39, 0.86);
     --cursor-ring-hover-shadow: 0 0 12px rgba(37, 42, 39, 0.16);
@@ -86,8 +84,7 @@
   --wave-opacity: 0.72;
   --bg-gradient: linear-gradient(140deg, var(--bg), var(--bg-alt));
   --bg-overlay: none;
-  --cursor-dot-color: #1fd1b8;
-  --cursor-dot-shadow: 0 0 12px rgba(31, 209, 184, 0.8);
+  --cursor-native: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%276%27 fill=%27%231fd1b8%27 opacity=%27.18%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%273.5%27 fill=%27%231fd1b8%27/%3E%3C/svg%3E') 12 12, auto;
   --cursor-ring-color: rgba(91, 192, 255, 0.8);
   --cursor-ring-hover-color: rgba(31, 209, 184, 0.95);
   --cursor-ring-hover-shadow: 0 0 18px rgba(31, 209, 184, 0.35);
@@ -130,8 +127,7 @@
       transparent 1px,
       transparent 4px
     );
-  --cursor-dot-color: #292c29;
-  --cursor-dot-shadow: 0 0 8px rgba(41, 44, 41, 0.28);
+  --cursor-native: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%276%27 fill=%27%23292c29%27 opacity=%27.14%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%273.5%27 fill=%27%23292c29%27/%3E%3C/svg%3E') 12 12, auto;
   --cursor-ring-color: rgba(54, 59, 56, 0.5);
   --cursor-ring-hover-color: rgba(37, 42, 39, 0.86);
   --cursor-ring-hover-shadow: 0 0 12px rgba(37, 42, 39, 0.16);
@@ -190,6 +186,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  cursor: var(--cursor-native);
   background: var(--bg-overlay), var(--bg-gradient);
   color: var(--text);
   font-family: "Space Grotesk", sans-serif;
@@ -292,7 +289,6 @@ video {
   contain: strict;
 }
 
-.cursor-dot,
 .cursor-ring {
   position: fixed;
   left: 0;
@@ -304,13 +300,6 @@ video {
   will-change: transform;
   contain: layout style paint;
   backface-visibility: hidden;
-}
-
-.cursor-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--cursor-dot-color);
-  box-shadow: var(--cursor-dot-shadow);
 }
 
 .cursor-ring {
@@ -1138,7 +1127,6 @@ h1 span {
     cursor: auto;
   }
 
-  .cursor-dot,
   .cursor-ring {
     display: none;
   }

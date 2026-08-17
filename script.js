@@ -406,7 +406,7 @@ const warmPageDuringIntro = (mediaConfigReady) => {
 
 const startPostIntroResources = (mediaConfigReady) => {
   const effectsScript = document.createElement('script');
-  effectsScript.src = 'effects.js?v=20260816-9';
+  effectsScript.src = 'effects.js?v=20260817-2';
   effectsScript.async = true;
   document.body.append(effectsScript);
 
@@ -460,36 +460,29 @@ protectMediaAssets();
 warmPageDuringIntro(mediaConfigReady);
 deferUntilIntroEnds(() => startPostIntroResources(mediaConfigReady));
 
-const cursorDot = document.querySelector('.cursor-dot');
 const cursorRing = document.querySelector('.cursor-ring');
-if (cursorDot && cursorRing && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-  document.body.style.cursor = 'none';
+if (cursorRing && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
   let x = window.innerWidth / 2;
   let y = window.innerHeight / 2;
   let rx = x;
   let ry = y;
   let cursorRafId = 0;
   let lastCursorFrame = 0;
-  let dotNeedsUpdate = false;
   let targetScale = 1;
   let renderedScale = 1;
 
   const moveCursor = (event) => {
-    x = event.clientX;
-    y = event.clientY;
-    dotNeedsUpdate = true;
+    const coalescedEvents = event.getCoalescedEvents?.();
+    const latestEvent = coalescedEvents?.length ? coalescedEvents[coalescedEvents.length - 1] : event;
+    x = latestEvent.clientX;
+    y = latestEvent.clientY;
     startCursorLoop();
   };
 
   const animateCursor = (timestamp) => {
-    const elapsed = lastCursorFrame ? Math.min(34, timestamp - lastCursorFrame) : 1000 / 60;
+    const elapsed = lastCursorFrame ? Math.min(100, timestamp - lastCursorFrame) : 1000 / 60;
     lastCursorFrame = timestamp;
     const follow = 1 - Math.pow(0.62, elapsed / (1000 / 60));
-
-    if (dotNeedsUpdate) {
-      cursorDot.style.transform = `translate3d(${x - 4}px, ${y - 4}px, 0)`;
-      dotNeedsUpdate = false;
-    }
 
     rx += (x - rx) * follow;
     ry += (y - ry) * follow;
@@ -519,7 +512,8 @@ if (cursorDot && cursorRing && window.matchMedia('(hover: hover) and (pointer: f
     }
   };
 
-  document.addEventListener('pointermove', moveCursor, { passive: true });
+  const cursorMoveEvent = 'onpointerrawupdate' in window ? 'pointerrawupdate' : 'pointermove';
+  document.addEventListener(cursorMoveEvent, moveCursor, { passive: true });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       stopCursorLoop();

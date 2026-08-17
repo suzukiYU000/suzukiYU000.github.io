@@ -6,6 +6,147 @@
     saveData ||
     (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory <= 4) ||
     (Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency <= 4);
+
+  const getFluidRenderSize = () => {
+    const scale = constrainedDevice ? 0.48 : 0.62;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1);
+    const maxPixels = constrainedDevice ? 380000 : 820000;
+    const viewportWidth = Math.max(1, window.innerWidth);
+    const viewportHeight = Math.max(1, window.innerHeight);
+    const minRenderSide = constrainedDevice ? 220 : 240;
+    const renderScale = Math.max(
+      scale * dpr,
+      minRenderSide / Math.min(viewportWidth, viewportHeight)
+    );
+    let renderWidth = Math.max(1, Math.floor(viewportWidth * renderScale));
+    let renderHeight = Math.max(1, Math.floor(viewportHeight * renderScale));
+    const pixelCount = renderWidth * renderHeight;
+    if (pixelCount > maxPixels) {
+      const fit = Math.sqrt(maxPixels / pixelCount);
+      renderWidth = Math.floor(renderWidth * fit);
+      renderHeight = Math.floor(renderHeight * fit);
+    }
+    return { viewportWidth, viewportHeight, renderWidth, renderHeight };
+  };
+
+  const startFluidWorkerEffect = () => {
+    const canvas = document.getElementById('fluid-bg');
+    const supportsOffscreenWebGL =
+      canvas instanceof HTMLCanvasElement &&
+      typeof Worker === 'function' &&
+      typeof canvas.transferControlToOffscreen === 'function';
+    if (!supportsOffscreenWebGL) return false;
+
+    let worker;
+    try {
+      worker = new Worker('effects-worker.js?v=20260817-2');
+    } catch {
+      return false;
+    }
+
+    let offscreen;
+    try {
+      offscreen = canvas.transferControlToOffscreen();
+    } catch {
+      worker.terminate();
+      return false;
+    }
+
+    const systemThemeQuery = window.matchMedia('(prefers-color-scheme: light)');
+    const isLightTheme = () => {
+      const explicitTheme = document.documentElement.dataset.theme;
+      return explicitTheme === 'light' || (!explicitTheme && systemThemeQuery.matches);
+    };
+    let stopped = false;
+    let pointerFrame = 0;
+    let resizeFrame = 0;
+    let pendingPointerX = 0;
+    let pendingPointerY = 0;
+
+    const initialSize = getFluidRenderSize();
+    canvas.style.width = `${initialSize.viewportWidth}px`;
+    canvas.style.height = `${initialSize.viewportHeight}px`;
+    worker.postMessage(
+      {
+        type: 'init',
+        canvas: offscreen,
+        ...initialSize,
+        constrainedDevice,
+        lightTheme: isLightTheme(),
+        visible: !document.hidden
+      },
+      [offscreen]
+    );
+
+    const onPointerMove = (event) => {
+      pendingPointerX = event.clientX;
+      pendingPointerY = event.clientY;
+      if (pointerFrame) return;
+      pointerFrame = requestAnimationFrame(() => {
+        pointerFrame = 0;
+        worker.postMessage({ type: 'pointermove', x: pendingPointerX, y: pendingPointerY });
+      });
+    };
+    const onPointerDown = (event) => {
+      worker.postMessage({ type: 'pointerdown', x: event.clientX, y: event.clientY });
+    };
+    const onResize = () => {
+      if (resizeFrame) return;
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = 0;
+        const size = getFluidRenderSize();
+        canvas.style.width = `${size.viewportWidth}px`;
+        canvas.style.height = `${size.viewportHeight}px`;
+        worker.postMessage({ type: 'resize', ...size });
+      });
+    };
+    const sendTheme = () => worker.postMessage({ type: 'theme', lightTheme: isLightTheme() });
+    const sendVisibility = () => worker.postMessage({ type: 'visibility', visible: !document.hidden });
+    const themeObserver = new MutationObserver(sendTheme);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    const cleanup = () => {
+      if (pointerFrame) cancelAnimationFrame(pointerFrame);
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('resize', onResize);
+      document.removeEventListener('visibilitychange', sendVisibility);
+      systemThemeQuery.removeEventListener?.('change', sendTheme);
+      themeObserver.disconnect();
+    };
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      cleanup();
+      worker.postMessage({ type: 'stop' });
+      worker.terminate();
+    };
+    const fallbackToMainThread = () => {
+      if (stopped) return;
+      stopped = true;
+      cleanup();
+      worker.terminate();
+      const replacement = canvas.cloneNode(false);
+      canvas.replaceWith(replacement);
+      startFluidEffect();
+    };
+
+    worker.addEventListener('message', (event) => {
+      if (event.data?.type === 'unsupported' || event.data?.type === 'error') fallbackToMainThread();
+    });
+    worker.addEventListener('error', (event) => {
+      event.preventDefault();
+      fallbackToMainThread();
+    });
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerdown', onPointerDown, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    document.addEventListener('visibilitychange', sendVisibility);
+    systemThemeQuery.addEventListener?.('change', sendTheme);
+    window.addEventListener('pagehide', stop, { once: true });
+    return true;
+  };
   const compileShader = (gl, type, source) => {
     const shader = gl.createShader(type);
     if (!shader) return null;
@@ -143,24 +284,7 @@
     };
 
     const resize = () => {
-      const scale = constrainedDevice ? 0.48 : 0.62;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1);
-      const maxPixels = constrainedDevice ? 380000 : 820000;
-      const viewportWidth = Math.max(1, window.innerWidth);
-      const viewportHeight = Math.max(1, window.innerHeight);
-      const minRenderSide = constrainedDevice ? 220 : 240;
-      const renderScale = Math.max(
-        scale * dpr,
-        minRenderSide / Math.min(viewportWidth, viewportHeight)
-      );
-      let renderWidth = Math.max(1, Math.floor(viewportWidth * renderScale));
-      let renderHeight = Math.max(1, Math.floor(viewportHeight * renderScale));
-      const pixelCount = renderWidth * renderHeight;
-      if (pixelCount > maxPixels) {
-        const fit = Math.sqrt(maxPixels / pixelCount);
-        renderWidth = Math.floor(renderWidth * fit);
-        renderHeight = Math.floor(renderHeight * fit);
-      }
+      const { viewportWidth, viewportHeight, renderWidth, renderHeight } = getFluidRenderSize();
       canvas.width = renderWidth;
       canvas.height = renderHeight;
       canvas.style.width = `${viewportWidth}px`;
@@ -200,7 +324,7 @@
       depth: false,
       stencil: false,
       desynchronized: true,
-      powerPreference: 'low-power'
+      powerPreference: 'high-performance'
     });
     if (!gl) {
       const stopFallback = startFluidCanvasFallback(canvas, ripples, (requestFrame) => {
@@ -469,5 +593,5 @@
     return stop;
   };
 
-  startFluidEffect();
+  if (!reducedMotion && !startFluidWorkerEffect()) startFluidEffect();
 })();
