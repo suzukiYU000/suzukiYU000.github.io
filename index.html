@@ -1,383 +1,170 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Suzuki Yuma | Robotics Research Portfolio</title>
-    <meta name="theme-color" content="#080d14" />
-    <link rel="canonical" href="https://suzukiyu000.github.io/" />
-    <link rel="icon" href="favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/branding/favicon-32.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/branding/apple-touch-icon.png" />
-    <meta
-      name="description"
-      content="ロボット研究者・Suzuki Yumaのポートフォリオ。論文、活動実績、社会実装プロジェクトを掲載。"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" href="assets/IMG_9679-optimized.webp" as="image" type="image/webp" fetchpriority="high" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="styles.css?v=20260817-2" />
-  </head>
-  <body>
-    <canvas id="fluid-bg" aria-hidden="true"></canvas>
-    <div class="cursor-ring" aria-hidden="true"></div>
-    <div id="intro-gate" class="intro-gate">
-      <canvas id="intro-particle-canvas" class="intro-particle-canvas" aria-hidden="true"></canvas>
-    </div>
-
-    <header class="site-header">
-      <a href="#top" class="logo" aria-label="Suzuki Yuma home">
-        <span class="site-logo-image site-logo-image-dark" aria-hidden="true"></span>
-        <span class="site-logo-image site-logo-image-light" aria-hidden="true"></span>
-      </a>
-      <button
-        id="nav-toggle"
-        class="nav-toggle"
-        type="button"
-        aria-expanded="false"
-        aria-controls="site-nav"
-      >
-        Menu
-      </button>
-      <nav id="site-nav" aria-label="Main navigation">
-        <a href="#achievements">Achievements</a>
-        <a href="#papers">Papers</a>
-        <a href="#activities">Activities</a>
-        <a href="#social">Social Project</a>
-        <a href="#contact">Contact</a>
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="テーマ切替">Theme: Auto</button>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="canonical" href="https://suzukiyu000.github.io/" />
+  <meta name="theme-color" content="#f3f1eb" />
+  <meta name="description" content="Suzuki Yuma — Shared Autonomyと身体拡張を研究する、慶應義塾大学の博士課程学生。" />
+  <title>Suzuki Yuma — Research & Practice</title>
+  <script>
+    (() => {
+      let theme = 'light';
+      try { theme = localStorage.getItem('research-preview-theme') || 'light'; } catch {}
+      document.documentElement.dataset.theme = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('intro-pending');
+        window.previewIntroDeadline = setTimeout(() => {
+          document.documentElement.classList.remove('intro-pending');
+          document.dispatchEvent(new Event('preview:intro:end'));
+        }, 9000);
+      }
+    })();
+  </script>
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/branding/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/branding/apple-touch-icon.png" />
+  <link rel="preload" href="assets/IMG_9679-optimized.webp" as="image" fetchpriority="high" />
+  <link rel="preload" href="assets/research-editorial/manrope-regular.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="preload" href="assets/research-editorial/oswald-bold.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="stylesheet" href="research-editorial.css?v=8" />
+  <link rel="stylesheet" href="research-editorial-project.css?v=1" />
+  <script src="research-editorial-i18n.js?v=9" defer></script>
+  <script src="research-editorial.js?v=1" defer></script>
+  <script src="research-editorial-particles.js?v=6" defer></script>
+  <script src="research-editorial-motion.js?v=8" defer></script>
+  <script src="research-editorial-intro.js?v=5" defer></script>
+</head>
+<body>
+  <div class="name-intro" id="name-intro">
+    <canvas id="intro-particle-canvas" aria-hidden="true"></canvas>
+    <p class="intro-fallback" aria-hidden="true">SUZUKI YUMA</p>
+    <div class="intro-footer"><span class="mono" aria-hidden="true">ROBOTICS RESEARCH</span><button class="intro-skip" type="button" data-i18n="skipIntro">スキップ</button></div>
+  </div>
+  <div class="page-register" aria-hidden="true"><span></span><span></span></div>
+  <a class="skip-link" href="#main" data-i18n="skipContent">本文へスキップ</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="wordmark" href="#about" aria-label="Suzuki Yuma トップへ">suzuki<span>yuma</span><span class="wordmark-dot">.</span></a>
+      <nav class="desktop-nav" aria-label="メインナビゲーション">
+        <a href="#research">研究</a><a href="#publications">論文</a><a href="#activities">活動</a><a href="#contact">連絡先</a>
       </nav>
-    </header>
+      <div class="header-tools">
+        <details class="language-menu">
+          <summary data-i18n-aria-label="chooseLanguage" aria-label="言語を選択"><span id="language-code">JA</span><span aria-hidden="true">⌄</span></summary>
+          <nav class="language-panel" aria-label="Language">
+            <a href="?lang=ja" data-language="ja" lang="ja">日本語</a><a href="?lang=en" data-language="en" lang="en">English</a>
+            <a href="?lang=zh" data-language="zh" lang="zh-Hans">简体中文</a><a href="?lang=ko" data-language="ko" lang="ko">한국어</a>
+            <a href="?lang=es" data-language="es" lang="es">Español</a><a href="?lang=fr" data-language="fr" lang="fr">Français</a>
+            <a href="?lang=de" data-language="de" lang="de">Deutsch</a><a href="?lang=pt" data-language="pt" lang="pt">Português</a>
+          </nav>
+        </details>
+        <details class="appearance">
+          <summary data-i18n="display" data-i18n-aria-label="displaySettings" aria-label="表示設定">表示</summary>
+          <div class="appearance-panel">
+            <label for="theme">カラーテーマ</label>
+            <select id="theme"><option value="light">ライト</option><option value="dark">ダーク</option><option value="system">端末に合わせる</option></select>
+          </div>
+        </details>
+        <button class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">メニュー</button>
+      </div>
+    </div>
+    <nav id="mobile-nav" class="mobile-nav" aria-label="モバイルナビゲーション" hidden>
+      <a href="#about">プロフィール</a><a href="#research">研究</a><a href="#publications">論文</a><a href="#activities">活動</a><a href="#contact">連絡先</a>
+    </nav>
+    <div class="reading-progress" aria-hidden="true"></div>
+  </header>
 
-    <main id="top">
-      <section class="hero reveal">
-        <div class="hero-main">
-          <div class="hero-copy">
-            <p class="eyebrow">ROBOTICS RESEARCHER</p>
-            <h1>
-              Suzuki Yuma
-              <span>PhD student / 未踏AD '25 クリエーター</span>
-            </h1>
-            <div class="profile-affiliation" aria-label="所属">
-              <span>慶應義塾大学大学院理工学研究科&nbsp;&nbsp;/&nbsp;&nbsp;<a href="https://www.yt.sd.keio.ac.jp/" target="_blank" rel="noopener noreferrer">髙橋正樹研究室 <span aria-hidden="true">↗</span></a></span>
-            </div>
-            <p>
-              I explore <strong>Shared Autonomy</strong> and <strong>Learning to Operate Intelligent Machines</strong>,
-              viewing assistive technologies like electric wheelchairs as a form of <strong>body augmentation</strong>.
-              By studying how humans and machines co-adapt,
-              I seek to unlock insights that benefit everyone—regardless of age or ability.
-              My goal is to foster a future where humans and intelligent robots evolve together,
-              creating a vibrant and inclusive society for all.
-            </p>
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="#achievements">ギャラリー</a>
-              <a class="btn btn-ghost" href="#papers">研究</a>
-              <a class="btn btn-ghost" href="https://www.humonii.com/" target="_blank" rel="noreferrer">社会実装プロジェクト🔗</a>
+  <main id="main">
+    <section id="about" class="profile-section wrap" aria-labelledby="profile-title">
+      <div class="section-marker"><span>ROBOTICS / RESEARCH & PRACTICE</span><span>KEIO UNIVERSITY, JAPAN</span></div>
+      <div class="profile-grid">
+        <div class="profile-copy">
+          <p class="eyebrow" data-i18n="researcherLabel">ロボット研究者</p>
+          <h1 id="profile-title"><span class="name-roman"><span class="name-row"><span class="name-part">SUZUKI</span></span><span class="name-row"><span class="name-part">YUMA<span class="name-stop" aria-hidden="true">.</span></span></span></span><span class="name-jp">鈴木 悠真</span></h1>
+          <p class="position">PhD student <span class="separator">/</span> 未踏AD ’25 クリエーター</p>
+          <p class="affiliation">慶應義塾大学大学院 理工学研究科<br /><a href="https://www.yt.sd.keio.ac.jp/" target="_blank" rel="noopener noreferrer">髙橋正樹研究室 <span aria-hidden="true">↗</span></a></p>
+        </div>
+        <figure class="profile-portrait">
+          <div class="portrait-frame"><img class="portrait" src="assets/IMG_9679-optimized.webp" width="720" height="1078" alt="電動車いすに乗る鈴木悠真" fetchpriority="high" decoding="async" /></div>
+          <figcaption>鈴木 悠真 <span>身体拡張としての移動を研究</span></figcaption>
+        </figure>
+        <div class="profile-research">
+          <h2 class="research-thesis"><span data-i18n="thesisFirst">身体拡張</span><span data-i18n="thesisSecond">人と機械の協調</span></h2>
+          <p class="bio">人と機械が、互いに適応する仕組みを研究しています。電動車いすを身体拡張の一形態と捉え、Shared Autonomyと知能機械の操作学習に取り組んでいます。</p>
+          <div class="profile-bottom">
+            <div><p class="interest-label">RESEARCH INTERESTS</p><p class="interests"><a href="#research-shared">Shared Autonomy <span aria-hidden="true">↘</span></a><a href="#research-body">Body Augmentation <span aria-hidden="true">↘</span></a><span>Human–Robot Co-adaptation</span></p></div>
+            <div class="profile-actions">
+              <a class="text-link profile-paper-link" href="#publications">論文を読む <span aria-hidden="true">↗</span></a>
+              <a class="text-link profile-project-link" href="https://www.humonii.com/" target="_blank" rel="noopener noreferrer">Humonii / 社会実装 <span aria-hidden="true">↗</span></a>
             </div>
           </div>
-          <figure class="profile-card">
-            <img
-              id="profile-photo"
-              data-media-key="profilePhoto"
-              src="assets/IMG_9679-optimized.webp"
-              alt="顔写真"
-              width="720"
-              height="1078"
-              draggable="false"
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-            />
-          </figure>
         </div>
-      </section>
-
-      <section id="achievements" class="section reveal">
-        <div class="section-head">
-          <p class="eyebrow">OUTPUT MOVIES</p>
-          <h2>ギャラリー</h2>
-        </div>
-        <div class="media-grid">
-          <article class="media-card">
-            <figure>
-              <video
-                id="feeling-video"
-                controls
-                controlslist="nodownload noremoteplayback"
-                disablepictureinpicture
-                disableremoteplayback
-                preload="none"
-                playsinline
-                poster="assets/Feeling-poster.webp"
-              >
-                <source data-media-key="feelingVideo" src="assets/Feeling-optimized.mp4" type="video/mp4" />
-                お使いのブラウザは動画再生に対応していません。
-              </video>
-              <figcaption>
-                <span class="media-title" data-media-caption-key="feelingVideo">Feeling Hands-Free Mobility</span>
-                <span class="media-duration" aria-label="再生時間 2分2秒">2:02</span>
-              </figcaption>
-              <p class="media-description">体幹操作で電動車いすを操る、ハンズフリー移動体験。</p>
-            </figure>
-          </article>
-
-          <article class="media-card">
-            <figure>
-              <video
-                controls
-                controlslist="nodownload noremoteplayback"
-                disablepictureinpicture
-                disableremoteplayback
-                preload="none"
-                playsinline
-                poster="assets/SharedControl-poster.webp"
-              >
-                <source data-media-key="sharedControlVideo" src="assets/SharedControl-cropped.mp4" type="video/mp4" />
-                お使いのブラウザは動画再生に対応していません。
-              </video>
-              <figcaption>
-                <span class="media-title" data-media-caption-key="sharedControlVideo">Shared Control</span>
-                <span class="media-duration" aria-label="再生時間 38秒">0:38</span>
-              </figcaption>
-              <p class="media-description">搭乗者の操作と自律支援を組み合わせる、電動車いすの共有制御デモ。</p>
-            </figure>
-          </article>
-        </div>
-      </section>
-
-      <section id="papers" class="section reveal">
-        <div class="section-head">
-          <p class="eyebrow">PAPER WORKS</p>
-          <h2>論文・研究発表</h2>
-        </div>
-        <div class="paper-list">
-          <article class="paper-item">
-            <p class="paper-year">2025</p>
-            <div>
-              <h3>Controllability Assessment of Belt-Type Wheelchair Interface with Individualized Asymmetry-Aware Body-Axis Calibration</h3>
-              <p>＠2025 IEEE International Conference on Systems, Man, and Cybernetics</p>
-            </div>
-          </article>
-
-          <article class="paper-item">
-            <p class="paper-year">2025</p>
-            <div>
-              <h3>ベルト型インターフェースを用いた車いすの操作性能評価</h3>
-              <p>＠ロボティクス・メカトロニクス講演会 2025（ROBOMECH 2025）</p>
-            </div>
-          </article>
-
-          <article class="paper-item">
-            <p class="paper-year">2025</p>
-            <div>
-              <h3>車いすの搭乗者行動適応型力ベース共有制御</h3>
-              <p>＠ロボティクス・メカトロニクス講演会 2025（ROBOMECH 2025）</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section id="activities" class="section reveal">
-        <div class="section-head">
-          <p class="eyebrow">ACTIVITY HISTORY</p>
-          <h2>活動実績</h2>
-        </div>
-        <div class="timeline-list" id="activity-timeline" data-visible-items="6">
-          <article class="timeline-item">
-            <p class="timeline-date">2026/01/16</p>
-            <p><a href="https://www.ipa.go.jp/jinzai/mitou/advanced/2025second/gaiyou-ur-1.html" target="_blank" rel="noreferrer">2025年度下期 未踏アドバンスト事業に採択</a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/12/12</p>
-            <p><a href="https://www.kll.keio.ac.jp/ktm/exhibition/hashtag/%e3%83%8f%e3%83%b3%e3%82%ba%e3%83%95%e3%83%aa%e3%83%bc/" target="_blank" rel="noreferrer">KEIO TECHNO-MALL 2025にて<span class="timeline-keep">「Feeling」を用いたアート作品を出展</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/11/23</p>
-            <p><a href="https://onerugby.jp/news/ufp2025" target="_blank" rel="noreferrer">UNIVERSAL FOOTBALL PARK SHIBUYA 2025にて<span class="timeline-keep">「Feeling」を出展</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/11/02</p>
-            <p><a href="https://www.japan-mobility-show.com/program/startup_future_factory/" target="_blank" rel="noreferrer">Japan Mobility Show 2025「Startup Future Factory」ブースにて<span class="timeline-keep">「Feeling」を出展</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/10/17</p>
-            <p><a href="https://www.smartcityfes2025.metro.tokyo.lg.jp/" target="_blank" rel="noreferrer">スマートシティフェスタ2025にて<span class="timeline-keep">「Feeling」を出展</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/10/14</p>
-            <p class="timeline-with-logo">
-              <a href="https://www.ceatec.com/ja/award/#sec09" target="_blank" rel="noreferrer">CEATEC AWARD 2025 モビリティ部門賞 受賞</a>
-              <img class="timeline-inline-logo" src="assets/CEATEC.png" alt="CEATEC" width="546" height="128" loading="lazy" decoding="async" />
-            </p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/10/08</p>
-            <p><a href="https://hcr.or.jp/seminar/13" target="_blank" rel="noreferrer">国際福祉機器展「福祉機器開発最前線」ブースにて<span class="timeline-keep">「Feeling」を出展</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/07/19</p>
-            <p>サマコンフェスにて<span class="timeline-keep">「Feeling」を出展</span></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/07/16</p>
-            <p>2025年度 健康医療ベンチャー大賞 キックオフイベントにて「Feeling」を出展</p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/07/03</p>
-            <p><a href="https://prtimes.jp/main/html/rd/p/000000032.000151437.html" target="_blank" rel="noreferrer">Mobility for ALL 2025<span class="timeline-keep">「日常の移動」テーマにHumoniiが採択</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/05/20</p>
-            <p><a href="https://www.pt-ot-st.net/index.php/topics/detail/1735" target="_blank" rel="noreferrer">PT-OT-ST.NETに<span class="timeline-keep">「Feeling」とインタビュー内容が掲載</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/03/05</p>
-            <p><a href="https://www.medical-jpn.jp/osaka/ja-jp/search/2025/product/product-details.exh-15aa9c2d-4f68-479d-b5eb-6a54bbeb515a.%E6%85%B6%E6%87%89%E7%BE%A9%E5%A1%BE%E5%A4%A7%E5%AD%A6feeling.pro-9be4806d-5208-4534-9e26-9d06f8109dc9.html#/" target="_blank" rel="noreferrer">第11回 メディカルジャパン大阪にて<span class="timeline-keep">「Feeling」を出展</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/03/01</p>
-            <p><a href="https://monomove.tokyo/contest/" target="_blank" rel="noreferrer">Tokyo ものづくり Movement 2025において、Humoniiが最優秀賞を受賞</a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2025/01/24</p>
-            <p><a href="https://yoxo-o.jp/yoxofestival/exhibit/?ve%5B%5D=e#list" target="_blank" rel="noreferrer">YOXO Festival 2025にて<span class="timeline-keep">「Feeling」を出展</span></a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2024/12/13</p>
-            <p><a href="https://www.kll.keio.ac.jp/ktm/exhibition/hashtag/%e3%83%8F%e3%83%b3%e3%82%BA%e3%83%95%e3%83%AA%e3%83%BC/" target="_blank" rel="noreferrer">KEIO TECHNO-MALL 2024 に Feeling を出展</a></p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2024/09/05</p>
-            <p>タウンニュース港北区版にHumoniiの活動が掲載</p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2024/08/19</p>
-            <p>令和6年度 技術系スタートアップ実証実験等支援プログラムにHumoniiが採択</p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2023/09/02</p>
-            <p>Mobility for ALL 2023 の実証実験に参加</p>
-          </article>
-          <article class="timeline-item">
-            <p class="timeline-date">2023/05/13</p>
-            <p>Mobility for ALL 2023にHumoniiが採択</p>
-          </article>
-        </div>
-        <div class="timeline-actions">
-          <button
-            class="timeline-toggle"
-            id="activity-toggle"
-            type="button"
-            aria-controls="activity-timeline"
-            aria-expanded="false"
-            hidden
-          >
-            <span class="timeline-toggle-label">もっと見る</span>
-            <span class="timeline-toggle-count" aria-hidden="true"></span>
-            <span class="timeline-toggle-arrow" aria-hidden="true"></span>
-          </button>
-        </div>
-      </section>
-
-      <section id="social" class="section reveal">
-        <div class="section-head">
-          <p class="eyebrow">APPEAL POINT</p>
-          <h2>社会実装プロジェクト / Humonii</h2>
-        </div>
-        <article class="card social-project-card">
-          <a class="humonii-brand" href="https://www.humonii.com/" target="_blank" rel="noreferrer" aria-label="Humonii">
-            <img
-              class="humonii-logo humonii-logo-black"
-              src="assets/Humonii-MARKTYPE-BK-optimized.webp"
-              alt="Humonii"
-              width="800"
-              height="800"
-              draggable="false"
-              loading="lazy"
-              decoding="async"
-            />
-            <img
-              class="humonii-logo humonii-logo-white"
-              src="assets/Humonii-MARKTYPE-WH-optimized.webp"
-              alt="Humonii"
-              width="800"
-              height="800"
-              draggable="false"
-              loading="lazy"
-              decoding="async"
-            />
-          </a>
-          <div class="social-copy">
-            <p>
-              「周りと違うから」「体が思うように動かないから」と、今までできてたこと、やりたいことを諦めてきた人たちに「もっとできる！」を届けたい。年齢や障がいの有無に関わらず、誰も想像すらしなかった人間の新たな境地をも引き出せたらどんな未来が待っているだろう。体幹操作によるハンズフリー体験によって移動に留まらず活動の幅を拡張し、新しい挑戦への一歩を支えます。
-            </p>
-            <ul>
-              <li>Project Site: <a href="https://www.humonii.com/" target="_blank" rel="noreferrer">https://www.humonii.com/</a></li>
-              <li>Instagram: <a href="https://www.instagram.com/humonii_official/" target="_blank" rel="noreferrer">@humonii_official</a></li>
-              <li>Focus: 社会実装・展示・発信の一体化</li>
-            </ul>
-          </div>
-        </article>
-      </section>
-
-    </main>
-
-    <footer id="contact" class="site-footer">
-      <div>
-        <p>Contact</p>
-        <span class="contact-address">yuma.suzuki.work＠gmail.com</span>
-        <form id="contact-form" class="contact-form" aria-describedby="contact-form-note">
-          <p id="contact-form-note" class="contact-note contact-note-lead">
-            入力内容はこのサイトから直接送信されません。Gmailまたはメールアプリの作成画面へ引き継ぎ、内容を確認して送信してください。
-          </p>
-          <label for="contact-name">Name <span class="required-mark" aria-hidden="true">*</span></label>
-          <input id="contact-name" name="name" type="text" placeholder="Your name" autocomplete="name" required maxlength="80" />
-          <label for="contact-email">Email <span class="required-mark" aria-hidden="true">*</span></label>
-          <input id="contact-email" name="email" type="email" placeholder="your@email.com" autocomplete="email" required maxlength="160" />
-          <label for="contact-subject">Subject <span class="required-mark" aria-hidden="true">*</span></label>
-          <input id="contact-subject" name="subject" type="text" placeholder="Inquiry from portfolio" autocomplete="off" required maxlength="120" />
-          <label for="contact-message">Message <span class="required-mark" aria-hidden="true">*</span></label>
-          <textarea id="contact-message" name="message" rows="5" placeholder="Write your message" autocomplete="off" required minlength="10" maxlength="2000"></textarea>
-          <button type="submit" class="btn btn-primary contact-submit">Gmailで内容を確認する</button>
-          <button type="button" id="contact-mail-app" class="btn contact-submit contact-secondary">メールアプリで内容を確認する</button>
-        </form>
       </div>
-      <div>
-        <p>Affiliation</p>
-        <p>Takahashi Lab. Keio University<br />3-14-1, Hiyoshi Kohoku-ku, Yokohama, Japan</p>
-      </div>
-      <div>
-        <p>Social</p>
-        <p>
-          <a class="social-link" href="https://www.instagram.com/humonii_official/" target="_blank" rel="noreferrer">
-            <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="3" width="18" height="18" rx="5" ry="5" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
-              <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
-              <circle cx="17.3" cy="6.7" r="1.1" fill="currentColor"></circle>
-            </svg>
-            <span>Instagram: @humonii_official</span>
-          </a>
-        </p>
-        <p>
-          <a class="social-link" href="https://www.linkedin.com/in/悠真-鈴木-20a9b3349" target="_blank" rel="noreferrer">
-            <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
-              <circle cx="8" cy="10" r="1.2" fill="currentColor"></circle>
-              <rect x="7" y="12" width="2" height="6" rx="0.8" fill="currentColor"></rect>
-              <path d="M12 18v-4.3c0-1.2 0.7-1.9 1.7-1.9 1 0 1.6 0.7 1.6 1.9V18h2v-4.7c0-2.1-1.2-3.3-3-3.3-1.2 0-1.9 0.5-2.3 1V10h-2v8h2z" fill="currentColor"></path>
-            </svg>
-            <span>LinkedIn</span>
-          </a>
-        </p>
-      </div>
-      <p class="copyright">© <span id="year"></span> Suzuki Yuma</p>
-    </footer>
+      <div class="profile-end"><span class="mono">ROBOTICS RESEARCH</span><a href="#research"><span data-i18n="exploreResearch">研究を見る</span><span class="direction-arrow" aria-hidden="true">↓</span></a><span class="mono">00 — 04</span></div>
+    </section>
 
-    <script src="intro.js?v=20260816-9"></script>
-    <script src="script.js?v=20260817-2"></script>
-  </body>
+    <section id="research" class="content-section wrap" aria-labelledby="research-title">
+      <div class="section-heading"><div><p class="eyebrow">01 / RESEARCH</p><h2 id="research-title">研究テーマ</h2></div></div>
+      <article class="research-row" id="research-shared">
+        <div class="research-copy"><span class="chapter-numeral" aria-hidden="true">01</span><span class="mono research-number">R.01 / SHARED AUTONOMY</span><h3>電動車いすの<br />共有制御</h3><p>搭乗者の操作と自律支援を組み合わせる、電動車いすの共有制御。人と機械の協調を、操作と移動の関係から探究しています。</p><div class="row-links"><a href="#paper-shared">関連する研究発表 <span aria-hidden="true">↗</span></a></div></div>
+        <figure class="research-media"><div class="media-legend"><span data-i18n="realFootage">実機の映像</span><span data-i18n="controlView">制御の可視化</span></div><div class="media-window"><video controls preload="none" playsinline poster="assets/research-editorial/shared-control-wide.webp"><source src="assets/research-editorial/shared-control-wide.mp4" type="video/mp4" />動画を再生できません。<a href="assets/research-editorial/shared-control-wide.mp4">動画を開く</a></video></div><figcaption><span>共有制御の実験映像</span><span class="mono">00:38</span></figcaption></figure>
+      </article>
+      <article class="research-row" id="research-body">
+        <div class="research-copy"><span class="chapter-numeral" aria-hidden="true">02</span><span class="mono research-number">R.02 / BODY AUGMENTATION</span><h3>体幹動作による<br />車いすの操作</h3><p>ベルト型インターフェースを用いた、体幹による電動車いすの操作。身体の個人差と操作性能に着目し、身体拡張としての移動を研究しています。</p><div class="row-links"><a href="#paper-belt">関連する論文 <span aria-hidden="true">↗</span></a><a href="https://www.humonii.com/" target="_blank" rel="noopener noreferrer">社会実装 / Humonii <span aria-hidden="true">↗</span></a></div></div>
+        <figure class="research-media"><div class="media-window"><video controls preload="none" playsinline poster="assets/Feeling-poster.webp"><source src="assets/Feeling-optimized.mp4" type="video/mp4" />動画を再生できません。<a href="assets/Feeling-optimized.mp4">動画を開く</a></video></div><figcaption><span>Feeling — 体幹操作による移動</span><span class="mono">02:02</span></figcaption></figure>
+      </article>
+      <a class="project-link" id="humonii" href="https://www.humonii.com/" target="_blank" rel="noopener noreferrer" aria-labelledby="humonii-title humonii-visit">
+        <span class="project-brand" aria-hidden="true">
+          <img class="project-logo-light" src="assets/Humonii-MARKTYPE-WH-optimized.webp" width="800" height="800" alt="" loading="lazy" decoding="async" />
+          <img class="project-logo-dark" src="assets/Humonii-MARKTYPE-BK-optimized.webp" width="800" height="800" alt="" loading="lazy" decoding="async" />
+        </span>
+        <div class="project-intro"><p class="eyebrow" data-i18n="humoniiKicker">社会実装プロジェクト</p><h3 id="humonii-title">Humonii</h3></div>
+        <p class="project-description" data-i18n="humoniiDescription">体幹で操作するモビリティ「Feeling」の開発・社会実装プロジェクト。</p>
+        <span class="project-destination"><span class="project-visit"><span id="humonii-visit" data-i18n="humoniiVisit">公式サイトを見る</span><span class="project-arrow" aria-hidden="true">↗</span></span><span class="project-domain mono" aria-hidden="true">humonii.com</span></span>
+      </a>
+    </section>
+
+    <section id="publications" class="content-section wrap" aria-labelledby="publications-title">
+      <div class="section-heading"><div><p class="eyebrow">02 / PUBLICATIONS</p><h2 id="publications-title">論文・研究発表</h2></div><span class="mono">SELECTED PUBLICATIONS / 2025</span></div>
+      <div class="paper-filters" role="group" aria-label="論文を研究テーマで絞り込む"><button data-filter="all" aria-pressed="true">すべて <span>03</span></button><button data-filter="body" aria-pressed="false">身体インターフェース <span>02</span></button><button data-filter="shared" aria-pressed="false">共有制御 <span>01</span></button></div>
+      <p id="paper-count" class="sr-only" aria-live="polite">3件の論文・研究発表を表示</p>
+      <div class="paper-list">
+        <article class="paper" id="paper-belt" data-topic="body"><div class="paper-meta"><span class="mono">2025</span><span>国際会議</span></div><div><h3 lang="en"><a href="https://doi.org/10.1109/SMC58881.2025.11342941" target="_blank" rel="noopener noreferrer">Controllability Assessment of Belt-Type Wheelchair Interface with Individualized Asymmetry-Aware Body-Axis Calibration <span aria-hidden="true">↗</span></a></h3><p class="paper-authors" lang="en">Yuma Suzuki, Yosuke Kawasaki, Masaki Takahashi</p><p class="venue" lang="en">IEEE International Conference on Systems, Man, and Cybernetics</p><p class="paper-context">身体軸の個人差を考慮した、ベルト型インターフェースの操作性能評価。</p></div></article>
+        <article class="paper" id="paper-interface" data-topic="body"><div class="paper-meta"><span class="mono">2025</span><span>国内発表</span></div><div><h3>ベルト型インターフェースを用いた車いすの操作性能評価</h3><p class="venue">ロボティクス・メカトロニクス講演会 2025 <span lang="en">/ ROBOMECH</span></p></div></article>
+        <article class="paper" id="paper-shared" data-topic="shared"><div class="paper-meta"><span class="mono">2025</span><span>国内発表</span></div><div><h3>車いすの搭乗者行動適応型力ベース共有制御</h3><p class="venue">ロボティクス・メカトロニクス講演会 2025 <span lang="en">/ ROBOMECH</span></p></div></article>
+      </div>
+    </section>
+
+    <section id="activities" class="content-section wrap" aria-labelledby="activities-title">
+      <div class="section-heading"><div><p class="eyebrow">03 / ACTIVITIES</p><h2 id="activities-title">活動実績</h2></div></div>
+      <div class="activity-list">
+        <article class="has-logo"><time datetime="2026-01-16" class="mono">2026.01.16</time><span class="activity-kind">採択</span><a href="https://www.ipa.go.jp/jinzai/mitou/advanced/2025second/gaiyou-ur-1.html" target="_blank" rel="noopener noreferrer">2025年度下期 未踏アドバンスト事業に採択 <span aria-hidden="true">↗</span></a><span class="activity-logo"><img src="assets/research-preview/mitou-advanced.jpg" width="300" height="68" alt="MITOU ADVANCED" decoding="async" /></span></article>
+        <article><time datetime="2025-12-12" class="mono">2025.12.12</time><span class="activity-kind">展示</span><p>KEIO TECHNO-MALL 2025にて「Feeling」を用いたアート作品を出展</p></article>
+        <article><time datetime="2025-11-23" class="mono">2025.11.23</time><span class="activity-kind">展示</span><a href="https://onerugby.jp/news/ufp2025" target="_blank" rel="noopener noreferrer">UNIVERSAL FOOTBALL PARK SHIBUYA 2025に「Feeling」を出展 <span aria-hidden="true">↗</span></a></article>
+        <article class="has-logo"><time datetime="2025-10-14" class="mono">2025.10.14</time><span class="activity-kind">受賞</span><a href="https://www.ceatec.com/ja/award/#sec09" target="_blank" rel="noopener noreferrer">CEATEC AWARD 2025 モビリティ部門賞 <span aria-hidden="true">↗</span></a><span class="activity-logo ceatec-logo"><img src="assets/CEATEC.png" width="546" height="128" alt="CEATEC AWARD" decoding="async" /></span></article>
+      </div>
+      <details class="older-activities"><summary>以前の活動を読む <span>2023–2025</span></summary><div class="activity-list">
+        <article><time datetime="2025-11-02" class="mono">2025.11.02</time><span class="activity-kind">展示</span><p>Japan Mobility Show 2025「Startup Future Factory」に「Feeling」を出展</p></article>
+        <article><time datetime="2025-10-17" class="mono">2025.10.17</time><span class="activity-kind">展示</span><p>スマートシティフェスタ2025に「Feeling」を出展</p></article>
+        <article><time datetime="2025-10-08" class="mono">2025.10.08</time><span class="activity-kind">展示</span><p>国際福祉機器展に「Feeling」を出展</p></article>
+        <article><time datetime="2025-07-19" class="mono">2025.07.19</time><span class="activity-kind">展示</span><p>サマコンフェスに「Feeling」を出展</p></article>
+        <article><time datetime="2025-07-16" class="mono">2025.07.16</time><span class="activity-kind">展示</span><p>健康医療ベンチャー大賞 キックオフイベントに「Feeling」を出展</p></article>
+        <article><time datetime="2025-07-03" class="mono">2025.07.03</time><span class="activity-kind">採択</span><p>Mobility for ALL 2025「日常の移動」テーマにHumoniiが採択</p></article>
+        <article><time datetime="2025-05-20" class="mono">2025.05.20</time><span class="activity-kind">掲載</span><p>PT-OT-ST.NETに「Feeling」とインタビュー内容が掲載</p></article>
+        <article><time datetime="2025-03-05" class="mono">2025.03.05</time><span class="activity-kind">展示</span><p>メディカルジャパン大阪に「Feeling」を出展</p></article>
+        <article class="has-logo"><time datetime="2025-03-01" class="mono">2025.03.01</time><span class="activity-kind">受賞</span><a href="https://monomove.tokyo/result2025/" target="_blank" rel="noopener noreferrer">Tokyo ものづくり Movement 2025にて、Humoniiが最優秀賞を受賞 <span aria-hidden="true">↗</span></a><span class="activity-logo movement-logo"><img src="assets/research-preview/monozukuri-movement.svg" width="701" height="92" alt="Tokyo ものづくり Movement" decoding="async" /></span></article>
+        <article><time datetime="2025-01-24" class="mono">2025.01.24</time><span class="activity-kind">展示</span><p>YOXO Festival 2025に「Feeling」を出展</p></article>
+        <article><time datetime="2024-12-13" class="mono">2024.12.13</time><span class="activity-kind">展示</span><p>KEIO TECHNO-MALL 2024にFeelingを出展</p></article>
+        <article><time datetime="2024-09-05" class="mono">2024.09.05</time><span class="activity-kind">掲載</span><p>タウンニュース港北区版にHumoniiの活動が掲載</p></article>
+        <article><time datetime="2024-08-19" class="mono">2024.08.19</time><span class="activity-kind">採択</span><p>技術系スタートアップ実証実験等支援プログラムにHumoniiが採択</p></article>
+        <article><time datetime="2023-09-02" class="mono">2023.09.02</time><span class="activity-kind">実証</span><p>Mobility for ALL 2023の実証実験に参加</p></article>
+        <article><time datetime="2023-05-13" class="mono">2023.05.13</time><span class="activity-kind">採択</span><p>Mobility for ALL 2023にHumoniiが採択</p></article>
+      </div></details>
+    </section>
+  </main>
+  <footer id="contact" class="site-footer">
+    <div class="wrap"><div class="footer-main"><div><p class="eyebrow">04 / CONTACT</p><h2>連絡先</h2><a class="email-link" href="mailto:yuma.suzuki.work@gmail.com">yuma.suzuki.work@gmail.com <span aria-hidden="true">↗</span></a><div class="copy-row"><button id="copy-email">メールアドレスをコピー</button><span id="copy-status" role="status"></span></div></div><div class="footer-links"><a href="https://www.yt.sd.keio.ac.jp/" target="_blank" rel="noopener noreferrer">Takahashi Lab. <span aria-hidden="true">↗</span></a><a href="https://www.humonii.com/" target="_blank" rel="noopener noreferrer">Humonii <span aria-hidden="true">↗</span></a><a href="https://www.linkedin.com/in/悠真-鈴木-20a9b3349" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a></div></div><div class="footer-bottom"><span>© <span id="year">2026</span> Suzuki Yuma</span><span class="mono">ROBOTICS RESEARCH</span><a href="#about">ページの先頭へ ↑</a></div></div>
+  </footer>
+</body>
 </html>

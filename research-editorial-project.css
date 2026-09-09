@@ -1,0 +1,50 @@
+/* Humonii belongs alongside the research: a clear route to its own project site. */
+.profile-bottom{flex-wrap:wrap;row-gap:22px}
+.profile-actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-left:auto;min-width:0;max-width:100%}
+.profile-actions .text-link{display:flex;justify-content:space-between;width:100%;margin-left:0;gap:18px;font-size:13px}
+.research-row:last-of-type{padding-bottom:0}
+.project-link{
+  display:grid;grid-template-columns:136px minmax(0,1fr) auto;
+  grid-template-areas:"brand intro destination" "brand description destination";
+  column-gap:36px;row-gap:8px;align-items:center;margin-top:56px;padding:30px 18px;
+  border-block:1px solid var(--line);color:var(--ink);text-decoration:none;
+  scroll-margin-top:110px;transition:background .25s,border-color .25s;
+}
+.project-link:hover{color:var(--ink);background:var(--tint);border-color:var(--accent)}
+.project-brand{grid-area:brand;display:block;width:136px;height:136px}
+.project-brand img{width:100%;height:100%;object-fit:contain}
+.project-logo-light{display:block}.project-logo-dark{display:none}
+:root[data-theme="dark"] .project-logo-light{display:none}
+:root[data-theme="dark"] .project-logo-dark{display:block}
+.project-intro{grid-area:intro;align-self:end;min-width:0}
+.project-intro .eyebrow{font-size:10px;margin:0 0 5px}
+.project-intro h3{font-size:28px;line-height:1.3;font-weight:400;letter-spacing:-.035em}
+.project-description{grid-area:description;align-self:start;min-width:0;max-width:42em;font-size:15px;line-height:1.9;color:var(--muted)}
+.project-destination{grid-area:destination;min-width:0;max-width:18em}
+.project-visit{display:flex;justify-content:space-between;align-items:center;gap:22px;padding:10px 0;border-bottom:1px solid var(--accent);color:var(--accent);font-size:14px;line-height:1.7}
+.project-arrow{flex-shrink:0;font-size:23px;transition:transform .3s var(--ease)}
+.project-link:hover .project-arrow{transform:translate(3px,-3px)}
+.project-domain{display:block;margin-top:10px;font-size:10px;color:var(--muted)}
+@media(max-width:1000px){
+  .project-link{grid-template-columns:112px minmax(0,1fr);grid-template-areas:"brand intro" "brand description" ". destination";column-gap:28px;padding:28px 12px}
+  .project-brand{width:112px;height:112px}
+  .project-destination{justify-self:start;margin-top:6px}
+}
+@media(max-width:600px){
+  .profile-actions{width:100%;margin-left:0;flex-direction:row;flex-wrap:wrap;gap:8px 24px}
+  .profile-actions .text-link{width:auto;max-width:100%;gap:13px;font-size:12px}
+  .project-link{grid-template-columns:80px minmax(0,1fr);grid-template-areas:"brand intro" "description description" "destination destination";column-gap:22px;row-gap:18px;margin-top:36px;padding:24px 0}
+  .project-brand{width:80px;height:80px}
+  .project-intro{align-self:center}.project-intro h3{font-size:28px}
+  .project-description{font-size:15px;line-height:1.95}
+  .project-destination{justify-self:stretch;max-width:none;margin-top:0}
+  .project-visit{font-size:14px;min-height:48px}
+}
+@media(prefers-reduced-motion:reduce){.project-link,.project-arrow{transition:none}.project-link:hover .project-arrow{transform:none}}
+@media print{
+  .project-link{break-inside:avoid;grid-template-columns:72px 1fr;grid-template-areas:"brand intro" "brand description" ". destination";gap:8px 20px;margin-top:24px;padding:16px 0}
+  .project-brand{width:72px;height:72px}
+  .project-logo-light,:root[data-theme="dark"] .project-logo-light{display:block}
+  .project-logo-dark,:root[data-theme="dark"] .project-logo-dark{display:none}
+  .project-intro h3{font-size:20px}.project-description{font-size:11pt}
+}

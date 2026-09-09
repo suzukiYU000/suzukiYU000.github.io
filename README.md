@@ -1,27 +1,26 @@
-﻿# Robotics Portfolio Template
+# Suzuki Yuma — Research Portfolio
 
-GitHub Pages向けの1ページポートフォリオです。
+公開サイト: https://suzukiyu000.github.io/
 
 ## 構成
-- `index.html`: 本文構造（プロフィール、主要開発、論文）
-- `styles.css`: デザイン（テック感 + アーティスティック）
-- `script.js`: スクロール表示演出と年表示
 
-## まず編集する場所
-- `index.html` の `Suzuki Yuma` や自己紹介文
-- `Main Development` 各カードの内容
-- `Papers` セクションのタイトル・学会名・`PDF`リンク
-- `footer` のメールアドレスとGitHub URL
+- `index.html`: プロフィール、研究、論文、活動実績、連絡先。
+- `research-editorial.css` / `research-editorial-project.css`: レイアウト、配色、Humoniiへのリンク。
+- `research-editorial.js`: ナビゲーション、論文フィルター、テーマ、メールアドレスのコピー。
+- `research-editorial-i18n.js`: 日本語・英語・簡体字中国語・韓国語・スペイン語・フランス語・ドイツ語・ポルトガル語の切り替え。
+- `research-editorial-particles.js` / `research-editorial-intro.js`: 点群から名前を形成する導入と読み込み処理。
+- `research-editorial-motion.js`: 導入から本文への移行とページ内の動き。
+- `assets/research-editorial/`: ローカル配信するフォント、そのライセンス、共有制御の映像。
 
-## GitHub Pages公開手順
-1. GitHubで新規リポジトリを作成（例: `portfolio`）
-2. このフォルダのファイルをpush
-3. GitHubリポジトリの `Settings > Pages` を開く
-4. `Build and deployment` で `Deploy from a branch` を選択
-5. Branch を `main` / `/ (root)` にして保存
-6. 数分待つと公開URLが発行されます
+## ローカル確認
 
-## 任意カスタム
-- 配色: `styles.css` の `:root` 変数
-- フォント: `index.html` の Google Fonts 読み込み
-- セクション追加: `index.html` に追記し、`styles.css` でクラスを拡張
+このフォルダで `python -m http.server 8765 --bind 127.0.0.1` を実行し、
+`http://127.0.0.1:8765/` を開きます。ビルドや外部翻訳サービスは不要です。
+言語は `?lang=en` などでも指定できます。
+
+## 公開
+
+GitHub Pagesは `website` ブランチのルートから配信します。
+作業用ブランチで変更を確認した後、`website` に反映してpushすると、
+GitHub Actionsの `pages build and deployment` が公開を更新します。
+試作HTMLやローカルの検証用ファイルを公開対象に含めないよう、追加するファイルを明示してください。
